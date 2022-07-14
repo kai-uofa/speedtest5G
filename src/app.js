@@ -1,5 +1,6 @@
 import './utils/env';
 import { App, LogLevel } from '@slack/bolt'
+import { runSpeedTest, runSpeedTestSync } from './utils/speedtest';
 
 const app = new App({
     token: process.env.SLACK_BOT_TOKEN,
@@ -15,6 +16,8 @@ const app = new App({
 app.use(async ({next}) => {
     await next();
 });
+
+// export to function?
 
 app.message('hello', async ({ message, say }) => {
     // Filter out message events with subtypes (see https://api.slack.com/events/message)
@@ -32,9 +35,9 @@ app.message('hello', async ({ message, say }) => {
                     type: 'button',
                     text: {
                     type: 'plain_text',
-                    text: 'Click Me',
+                    text: 'Start a speed test?',
                     },
-                    action_id: 'button_click',
+                    action_id: 'run_speed_test',
                 },
                 },
             ],
@@ -43,10 +46,12 @@ app.message('hello', async ({ message, say }) => {
     }
 })
 
-app.action('button_click', async ({ body, ack, say }) => {
+app.action('run_speed_test', async ({ body, ack, say }) => {
     // Acknowledge the action
     await ack();
-    await say(`<@${body.user.id}> clicked the button`);
+    say(`Got it. <@${body.user.id}>. Running speed test now.`);
+    const result = await runSpeedTest();
+    console.log(`speed test process exited with code ${result}`);
 });
 
 (async () => {
