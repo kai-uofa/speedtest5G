@@ -1,6 +1,6 @@
 import './utils/env';
 import { App, LogLevel } from '@slack/bolt'
-import { runSpeedTest, runSpeedTestSync } from './utils/speedtest';
+import { runSpeedTest } from './utils/speedtest';
 
 const app = new App({
     token: process.env.SLACK_BOT_TOKEN,
@@ -9,7 +9,7 @@ const app = new App({
     socketMode: true,
     // Socket Mode doesn't listen on a port, but in case you want your app to respond to OAuth,
     // you still need to listen on some port!
-    port: process.env.PORT || 3000,
+    port: Number(process.env.PORT) || 3000,
     logLevel: LogLevel.DEBUG
 });
 
