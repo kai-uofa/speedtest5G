@@ -1,6 +1,6 @@
 import './utils/env';
 import { App, LogLevel } from '@slack/bolt'
-import { runSpeedTest } from './utils/speedtest';
+import { runSpeedTest } from './services/speedtest';
 
 const app = new App({
     token: process.env.SLACK_BOT_TOKEN,
@@ -10,7 +10,7 @@ const app = new App({
     // Socket Mode doesn't listen on a port, but in case you want your app to respond to OAuth,
     // you still need to listen on some port!
     port: Number(process.env.PORT) || 3000,
-    logLevel: LogLevel.DEBUG
+    logLevel: LogLevel.ERROR
 });
 
 app.use(async ({next}) => {
@@ -44,14 +44,18 @@ app.message('hello', async ({ message, say }) => {
             text: `Hey there <@${message.user}>!`,
         });
     }
-})
+});
 
 app.action('run_speed_test', async ({ body, ack, say }) => {
     // Acknowledge the action
     await ack();
-    say(`Got it. <@${body.user.id}>. Running speed test now.`);
+    say(`Got it. <@${body.user.id}>. I'll let you know the result once it's done.`);
     const result = await runSpeedTest();
-    console.log(`speed test process exited with code ${result}`);
+    say(`Hey <@${body.user.id}>. This is the result that I promised:\
+        \n Download speed: ${result.download} Mbps\
+        \n Upload speed: ${result.upload} Mbps\
+        \n Latency: ${result.latency} ms\
+    `)
 });
 
 (async () => {
