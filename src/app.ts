@@ -1,6 +1,15 @@
 import './utils/env';
 import { App, LogLevel } from '@slack/bolt'
 import { runSpeedTest } from './services/speedtest';
+import { scheduleSpeedTest, ScheduledTest } from './services/scheduler';
+import { EventEmitter } from 'events';
+
+let scheduledResult: ScheduledTest = {
+    time: undefined,
+    result: undefined
+};
+
+const finishScheduledTestEvent = new EventEmitter();
 
 const app = new App({
     token: process.env.SLACK_BOT_TOKEN,
@@ -13,11 +22,11 @@ const app = new App({
     logLevel: LogLevel.ERROR
 });
 
-app.use(async ({next}) => {
+app.use(async ({ next }) => {
     await next();
 });
 
-// export to function?
+scheduleSpeedTest(scheduledResult, finishScheduledTestEvent);
 
 app.message('hello', async ({ message, say }) => {
     // Filter out message events with subtypes (see https://api.slack.com/events/message)
@@ -52,10 +61,23 @@ app.action('run_speed_test', async ({ body, ack, say }) => {
     say(`Got it. <@${body.user.id}>. I'll let you know the result once it's done.`);
     const result = await runSpeedTest();
     say(`Hey <@${body.user.id}>. This is the result that I promised:\
-        \n Download speed: ${result.download} Mbps\
-        \n Upload speed: ${result.upload} Mbps\
-        \n Latency: ${result.latency} ms\
+        \n - Download speed: ${result.download} Mbps\
+        \n - Upload speed: ${result.upload} Mbps\
+        \n - Latency: ${result.latency} ms\
     `)
+});
+
+finishScheduledTestEvent.on('scheduled_test_finished', () => {
+    app.client.chat.postMessage(
+        {
+            channel: 'C03NPU8H65U',
+            text: `A scheduled test was run at: ${scheduledResult.time} \
+                \n - Download speed: ${scheduledResult.result?.download} Mbps\
+                \n - Upload speed: ${scheduledResult.result?.upload} Mbps\
+                \n - Latency: ${scheduledResult.result?.latency} ms\
+            `
+        }
+    );
 });
 
 (async () => {

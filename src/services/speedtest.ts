@@ -69,6 +69,7 @@ async function runSpeedTest(): Promise<My5GSpeedTest> {
 
     speedtest.on('close', code => {
         const testResult: SpeedTest = JSON.parse(output);
+        // TODO: store for later inspection
         const result: My5GSpeedTest = {
             code: code,
             download: testResult.download.bandwidth / 100000,
@@ -83,4 +84,4 @@ async function runSpeedTest(): Promise<My5GSpeedTest> {
     });
 }
 
-export { runSpeedTest };
+export { runSpeedTest, My5GSpeedTest };
