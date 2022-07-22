@@ -4,6 +4,8 @@ import { runSpeedTest } from './services/speedtest';
 import { scheduleSpeedTest, ScheduledTest } from './services/scheduler';
 import { EventEmitter } from 'events';
 
+let defaultChannelID: string = 'C03NPU8H65U';
+
 let scheduledResult: ScheduledTest = {
     time: undefined,
     result: undefined
@@ -28,7 +30,7 @@ app.use(async ({ next }) => {
 
 scheduleSpeedTest(scheduledResult, finishScheduledTestEvent);
 
-app.message('hello', async ({ message, say }) => {
+app.message(/^(hi|hello|hey).*/i, async ({ message, say }) => {
     // Filter out message events with subtypes (see https://api.slack.com/events/message)
     if (message.subtype === undefined || message.subtype === 'bot_message') {
         // say() sends a message to the channel where the event was triggered
@@ -70,7 +72,7 @@ app.action('run_speed_test', async ({ body, ack, say }) => {
 finishScheduledTestEvent.on('scheduled_test_finished', () => {
     app.client.chat.postMessage(
         {
-            channel: 'C03NPU8H65U',
+            channel: defaultChannelID,
             text: `A scheduled test was run at: ${scheduledResult.time} \
                 \n - Download speed: ${scheduledResult.result?.download} Mbps\
                 \n - Upload speed: ${scheduledResult.result?.upload} Mbps\
