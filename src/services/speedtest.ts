@@ -45,9 +45,10 @@ interface SpeedTest {
 
 type My5GSpeedTest = {
     code: number | null,
-    download: number,
-    upload: number,
-    latency: number
+    error: string | undefined,
+    download: number | undefined,
+    upload: number | undefined,
+    latency: number | undefined
 }
 
 async function runSpeedTest(): Promise<My5GSpeedTest> {
@@ -68,15 +69,34 @@ async function runSpeedTest(): Promise<My5GSpeedTest> {
     });
 
     speedtest.on('close', code => {
-        const testResult: SpeedTest = JSON.parse(output);
-        // TODO: store for later inspection
-        const result: My5GSpeedTest = {
+        let result: My5GSpeedTest = {
             code: code,
-            download: testResult.download.bandwidth / 100000,
-            upload: testResult.upload.bandwidth / 100000,
-            latency: testResult.ping.latency
+            error: undefined,
+            download: undefined,
+            upload: undefined,
+            latency: undefined
+        };
+
+        if (code != 0) {
+            console.log(`ERROR: ${code}`);
+            console.log(output);
+            result.error = output;
         }
-        finished.emit('test_finished', result);
+
+        try {
+            if (code == 0) {
+                const testResult: SpeedTest = JSON.parse(output);
+                // TODO: store for later inspection
+    
+                result.download = testResult.download.bandwidth / 100000;
+                result.upload = testResult.upload.bandwidth / 100000;
+                result.latency = testResult.ping.latency;
+            }
+        } catch (error) {
+            console.log(`ERROR: ${error}`);
+        } finally {
+            finished.emit('test_finished', result);
+        } 
     });
 
     return await new Promise( resolve => {

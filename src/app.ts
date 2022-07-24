@@ -61,12 +61,20 @@ app.action('run_speed_test', async ({ body, ack, say }) => {
     // Acknowledge the action
     await ack();
     say(`Got it. <@${body.user.id}>. I'll let you know the result once it's done.`);
+
     const result = await runSpeedTest();
-    say(`Hey <@${body.user.id}>. This is the result that I promised:\
-        \n - Download speed: ${result.download} Mbps\
-        \n - Upload speed: ${result.upload} Mbps\
-        \n - Latency: ${result.latency} ms\
-    `)
+
+    if (result.code == 0) {
+        say(`Hey <@${body.user.id}>. This is the result that I promised:\
+            \n - Download speed: ${result.download} Mbps\
+            \n - Upload speed: ${result.upload} Mbps\
+            \n - Latency: ${result.latency} ms\
+        `);
+        return;
+    }
+
+    say(`Sorry <@${body.user.id}>. I was unable to get the result due to the error: ${result.error} (${result.code})`);
+    
 });
 
 finishScheduledTestEvent.on('scheduled_test_finished', () => {
