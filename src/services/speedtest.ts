@@ -77,17 +77,15 @@ async function runSpeedTest(): Promise<My5GSpeedTest> {
             latency: undefined
         };
 
-        if (code != 0) {
-            console.log(`ERROR: ${code}`);
-            console.log(output);
-            result.error = output;
-        }
-
         try {
-            if (code == 0) {
-                const testResult: SpeedTest = JSON.parse(output);
+            const testResult = JSON.parse(output);
+            
+            if (code !== 0) {
+                result.error = testResult.error;
+            }
+            
+            if (code === 0) {
                 // TODO: store for later inspection
-    
                 result.download = testResult.download.bandwidth / 100000;
                 result.upload = testResult.upload.bandwidth / 100000;
                 result.latency = testResult.ping.latency;
