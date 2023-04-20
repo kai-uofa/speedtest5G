@@ -8,7 +8,7 @@ interface ScheduledTest {
 }
 
 // Ref: https://crontab.guru/#0_*/3_*_*_*
-const cronRule = '5 */23 * * *';
+const cronRule = '0 */3 * * *';
 
 function scheduleSpeedTest(scheduledResult: ScheduledTest, finishTestEvent: EventEmitter) : any {
     Schedule.scheduleJob(cronRule, async function (fireTime) { 

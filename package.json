@@ -27,7 +27,6 @@
   "homepage": "https://github.com/kai-uofa/speedtest5G#readme",
   "dependencies": {
     "@slack/bolt": "^3.11.3",
-    "cypress": "^10.6.0",
     "dotenv": "^16.0.1",
     "node-schedule": "^2.1.0"
   },

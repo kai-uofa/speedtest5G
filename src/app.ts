@@ -70,7 +70,6 @@ app.action('run_speed_test', async ({ body, ack, say }) => {
             \n - Upload speed: ${result.upload} Mbps\
             \n - Latency: ${result.latency} ms\
         `);
-        // TODO: call function to reset router
         return;
     }
 
@@ -79,27 +78,16 @@ app.action('run_speed_test', async ({ body, ack, say }) => {
 });
 
 finishScheduledTestEvent.on('scheduled_test_finished', () => {
-    const respond = {
-        channel: defaultChannelID,
-        text: ''
-    };
-
-    if (scheduledResult.result?.code === 0) {
-        respond.text = `A scheduled test was run at: ${scheduledResult.time} \
-            \n - Download speed: ${scheduledResult.result?.download} Mbps\
-            \n - Upload speed: ${scheduledResult.result?.upload} Mbps\
-            \n - Latency: ${scheduledResult.result?.latency} ms\
-        `;
-
-        // TODO: call function to ask for router reset
-    }
-
-    if (scheduledResult.result === undefined || scheduledResult.result?.code !== 0) {
-        respond.text = `The scheduled test ran at ${scheduledResult.time} was failed due to the error: ${scheduledResult.result?.error} (${scheduledResult.result?.code})`;
-    }
-
-    app.client.chat.postMessage(respond);
-    
+    app.client.chat.postMessage(
+        {
+            channel: defaultChannelID,
+            text: `A scheduled test was run at: ${scheduledResult.time} \
+                \n - Download speed: ${scheduledResult.result?.download} Mbps\
+                \n - Upload speed: ${scheduledResult.result?.upload} Mbps\
+                \n - Latency: ${scheduledResult.result?.latency} ms\
+            `
+        }
+    );
 });
 
 (async () => {
