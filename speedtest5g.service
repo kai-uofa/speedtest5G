@@ -1,0 +1,28 @@
+# Ref: https://natancabral.medium.com/run-node-js-service-with-systemd-on-linux-42cfdf0ad7b2
+# https://www.freecodecamp.org/news/linux-ln-how-to-create-a-symbolic-link-in-linux-example-bash-command/
+[Unit]
+Description="Speedtest 5G"
+
+[Service]
+# Start Service and Examples
+ExecStart=/usr/bin/node app.js
+WorkingDirectory=/home/pi/apps/speedtest5g
+
+# Options Stop and Restart
+Restart=always
+RestartSec=30
+
+# Output to syslog
+StandardOutput=syslog
+StandardError=syslog
+SyslogIdentifier=Speedtest5G
+# RHEL/Fedora uses 'nobody'
+User=pi
+# Debian/Ubuntu uses 'nogroup', RHEL/Fedora uses 'nobody'
+Group=pi
+
+# Variables
+Environment=NODE_ENV=production PORT=5000
+
+[Install]
+WantedBy=multi-user.target
