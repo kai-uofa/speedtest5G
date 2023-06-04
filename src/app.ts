@@ -1,7 +1,11 @@
 import { App, LogLevel } from "@slack/bolt";
 import { EventEmitter } from "events";
 import type { ScheduledTest } from "../types/services";
-import { scheduleSpeedTest } from "./services/scheduler";
+import {
+  MIN_DOWNLOAD_THRESHOLD,
+  SCHEDULED_TEST_FINISHED,
+  scheduleSpeedTest,
+} from "./services/scheduler";
 import { runSpeedTest } from "./services/speedtest";
 import "./utils/env";
 
@@ -69,29 +73,39 @@ app.action("run_speed_test", async ({ body, ack, say }) => {
 
   const result = await runSpeedTest();
 
-  if (result.code == 0) {
-    say(`Hey <@${body.user.id}>. This is the result that I promised:\
+  if (result.error || result.code) {
+    say(
+      `Sorry <@${body.user.id}>. I was unable to get the result due to the error: ${result.error} (${result.code}`
+    );
+    return;
+  }
+
+  say(`Hey <@${body.user.id}>. This is the result that I promised:\
             \n - Download speed: ${result.download} Mbps\
             \n - Upload speed: ${result.upload} Mbps\
             \n - Latency: ${result.latency} ms\
         `);
-    return;
-  }
-
-  say(
-    `Sorry <@${body.user.id}>. I was unable to get the result due to the error: ${result.error} (${result.code})`
-  );
 });
 
-finishScheduledTestEvent.on("scheduled_test_finished", () => {
-  app.client.chat.postMessage({
-    channel: process.env.CHANNEL_ID as string,
-    text: `A scheduled test was run at: ${scheduledResult.time} \
-                \n - Download speed: ${scheduledResult.result?.download} Mbps\
-                \n - Upload speed: ${scheduledResult.result?.upload} Mbps\
-                \n - Latency: ${scheduledResult.result?.latency} ms\
-            `,
-  });
+finishScheduledTestEvent.on(SCHEDULED_TEST_FINISHED, () => {
+  console.log(`A scheduled test was run at: ${scheduledResult.time}`);
+  console.log(` - Download speed: ${scheduledResult.result?.download} Mbps`);
+  console.log(` - Upload speed: ${scheduledResult.result?.upload} Mbps`);
+  console.log(` - Latency: ${scheduledResult.result?.latency} ms`);
+
+  if (
+    scheduledResult.result?.download &&
+    scheduledResult.result?.download < parseFloat(MIN_DOWNLOAD_THRESHOLD)
+  ) {
+    app.client.chat.postMessage({
+      channel: process.env.CHANNEL_ID as string,
+      text: `Scheduled test ran at: ${scheduledResult.time} returned a low download speed of ${scheduledResult.result?.download} Mbps. \
+                    \n - Download speed: ${scheduledResult.result?.download} Mbps\
+                    \n - Upload speed: ${scheduledResult.result?.upload} Mbps\
+                    \n - Latency: ${scheduledResult.result?.latency} ms\
+                `,
+    });
+  }
 });
 
 (async () => {

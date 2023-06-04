@@ -3,13 +3,29 @@ import { EventEmitter } from "events";
 import type { My5GSpeedTest, SpeedTest } from "../../types/services";
 import "../utils/env";
 
+const SPEEDTEST_PATH = process.env.SPEEDTEST_PATH || "speedtest";
+const ARGS = ["--format=json-pretty", "--progress=no"];
+
+const TEST_FINISHED_EVENT = "test_finished";
+
 export async function runSpeedTest(): Promise<My5GSpeedTest> {
-  const command: string = process.env.SPEEDTEST_PATH || "speedtest";
-  const args: string[] = ["--format=json-pretty", "--progress=no"];
+  const finishedEvent = new EventEmitter();
 
-  const finished = new EventEmitter();
+  executeCommand(SPEEDTEST_PATH, ARGS, finishedEvent);
 
-  console.log("Running...", command, args);
+  return await new Promise((resolve) => {
+    finishedEvent.on(TEST_FINISHED_EVENT, resolve);
+  });
+}
+
+function executeCommand(
+  command: string,
+  args: string[],
+  finishedEvent: EventEmitter
+) {
+  const result: My5GSpeedTest = {
+    code: null,
+  };
 
   try {
     const speedtest = exec(`${command} ${args.join(" ")}`);
@@ -28,40 +44,28 @@ export async function runSpeedTest(): Promise<My5GSpeedTest> {
       console.error("ERROR:", error.message);
     });
 
-    speedtest.on("exit", (code, signal) => {
-      console.log("EXIT:", code, signal);
-    });
-
     speedtest.on("close", (code) => {
-      console.log("CLOSE:", code, stdout, stderr);
-      let result: My5GSpeedTest = {
-        code: code,
-        error: undefined,
-        download: undefined,
-        upload: undefined,
-        latency: undefined,
-      };
-
       if (code != 0) {
         result.error = stderr;
+        result.code = code;
+        console.error("Result:", result);
+        finishedEvent.emit(TEST_FINISHED_EVENT, result);
+        return;
       }
 
-      if (code == 0) {
-        const testResult: SpeedTest = JSON.parse(stdout);
-        // TODO: store for later inspection
+      const testResult: SpeedTest = JSON.parse(stdout);
+      // TODO: store for later inspection
 
-        result.download = testResult.download.bandwidth / 100000;
-        result.upload = testResult.upload.bandwidth / 100000;
-        result.latency = testResult.ping.latency;
-      }
+      result.download = testResult.download.bandwidth / 100000;
+      result.upload = testResult.upload.bandwidth / 100000;
+      result.latency = testResult.ping.latency;
 
-      finished.emit("test_finished", result);
+      console.error("Result:", result);
+      finishedEvent.emit(TEST_FINISHED_EVENT, result);
     });
   } catch (error) {
-    console.log("ERROR:", error);
+    result.error = (error as Error).toString();
+    console.error("Result:", result);
+    finishedEvent.emit(TEST_FINISHED_EVENT, result);
   }
-
-  return await new Promise((resolve) => {
-    finished.on("test_finished", resolve);
-  });
 }
