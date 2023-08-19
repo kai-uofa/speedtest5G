@@ -7,7 +7,7 @@
     "build": "tsc -p .",
     "build:watch": "tsc -w -p .",
     "bundle": "node bundle.mjs",
-    "deploy-pi": "cd ./dist && scp ./app.js ./.env pi@raspberrypi.local:/home/pi/apps/speedtest5g",
+    "deploy:pi": "cd ./dist && scp ./app.js ./.env pi@raspberrypi.local:/home/pi/apps/speedtest5g",
     "start": "npm run build && node dist/app.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
